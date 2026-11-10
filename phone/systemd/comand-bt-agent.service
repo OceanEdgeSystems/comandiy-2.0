@@ -1,0 +1,18 @@
+[Unit]
+# Pairing, which BlueZ cannot do on its own on a device with no keyboard.
+# Without an agent registered, a phone's pairing request is rejected outright.
+Description=COMAND Bluetooth pairing agent
+After=bluetooth.service
+Requires=bluetooth.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+# Root, because registering the default agent and setting adapter properties
+# are privileged operations on the system bus.
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/bt-agent.py --discoverable
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

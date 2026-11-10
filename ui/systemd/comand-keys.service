@@ -1,0 +1,19 @@
+[Unit]
+# COMAND's own rotary knob and buttons drive the menu: the rbcan box types
+# COMAND's keys as a USB keyboard; this takes that keyboard and passes the keys
+# to the page through the bridge (comand-keys.py).
+Description=COMAND controls to the menu
+After=comand-bridge.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+# input for /dev/input/event*: the box's keyboard.
+SupplementaryGroups=input
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/comand-keys.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

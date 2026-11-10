@@ -1,0 +1,21 @@
+[Unit]
+# Turns uxplay's log into a source change. See mirror-watch.py: uxplay offers
+# no hook, and a phone that starts mirroring has to be able to take the
+# speakers from the radio without the driver touching the panel.
+Description=COMAND AirPlay session watcher
+After=comand-mirror.service comand-bridge.service
+Wants=comand-mirror.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+# Line-buffered, for the same reason the receiver itself is: this reads a
+# pipe, and a block-buffered journalctl would hold a session start until it
+# had a few kilobytes to say.
+ExecStart=/usr/bin/stdbuf -oL /usr/bin/python3 /usr/local/bin/mirror-watch.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

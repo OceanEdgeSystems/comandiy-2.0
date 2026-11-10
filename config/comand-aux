@@ -1,0 +1,5 @@
+# Optional: auxiliary battery monitor over Bluetooth.
+DALY_MAC=
+VICTRON_MAC=
+VICTRON_KEY=
+POLL_S=

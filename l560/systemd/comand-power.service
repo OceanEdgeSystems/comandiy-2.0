@@ -1,0 +1,14 @@
+[Unit]
+# Stay up for an hour after the car's power goes, then suspend. See comand-power.py.
+Description=COMAND power-loss hold and sleep
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+# --critical 20: sleep before the battery goes deep (default 8); the 1 h hold ends around 64 % from the 80 % charge limit
+ExecStart=/usr/bin/python3 -u /usr/local/bin/comand-power.py --critical 20
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

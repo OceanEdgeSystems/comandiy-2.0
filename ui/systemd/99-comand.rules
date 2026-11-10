@@ -1,0 +1,10 @@
+# The Carlinkit dongle, reachable without root.
+#
+# carplay.py is started by sway so that it inherits WAYLAND_DISPLAY -- sway's
+# socket name carries its pid and changes every restart, so a separate unit
+# would have to guess it. Inheriting means running as the session user, which
+# means the dongle has to be openable by that user.
+SUBSYSTEM=="usb", ATTR{idVendor}=="1314", MODE="0660", GROUP="plugdev"
+
+# The knob, for the same reason on the bridge's side.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", MODE="0660", GROUP="dialout"

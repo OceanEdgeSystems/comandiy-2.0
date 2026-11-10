@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+.DS_Store
+esp32-knob/*/build/

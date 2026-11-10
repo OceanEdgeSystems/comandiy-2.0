@@ -1,0 +1,16 @@
+[Unit]
+# The menu's way to Music Assistant. See car/ma-link.py.
+Description=COMAND Music Assistant link
+After=network-online.target
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+EnvironmentFile=-/etc/default/comand-ma
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/ma-link.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

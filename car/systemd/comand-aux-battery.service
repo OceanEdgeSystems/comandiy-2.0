@@ -1,0 +1,20 @@
+[Unit]
+# What the auxiliary battery is doing. See car/aux-battery.py.
+Description=COMAND auxiliary battery and DC-DC charger
+After=bluetooth.service comand-bridge.service
+Wants=bluetooth.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+# The encryption key for the charger lives here, and nothing else needs it.
+EnvironmentFile=-/etc/default/comand-aux
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/aux-battery.py
+Restart=always
+# Longer than the default: both devices are in the car rather than on the
+# bench, and a service that cannot find them should not spin retrying.
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,27 @@
+#!/bin/bash
+# Build a Navit binfile from an OSM extract.
+#
+# Navit's own extract service (maps.navit-project.org) answers nothing, so the
+# data comes from Geofabrik and is converted here. This takes a while and wants
+# a few GB of scratch, which is why it runs detached and writes a log.
+set -e
+REGION="${1:-denmark}"
+URL="${2:-https://download.geofabrik.de/europe/denmark-latest.osm.pbf}"
+WORK=/var/lib/comand/maps
+sudo mkdir -p "$WORK"
+sudo chown "$(id -u):$(id -g)" "$WORK"
+cd "$WORK"
+
+if [ ! -s "$REGION.osm.pbf" ]; then
+  echo "downloading $URL"
+  curl -L --fail -o "$REGION.osm.pbf.part" "$URL"
+  mv "$REGION.osm.pbf.part" "$REGION.osm.pbf"
+fi
+ls -lh "$REGION.osm.pbf"
+
+echo "converting -- this is the slow part"
+# 4 GB of slice buffer and four threads: the box has 16 GB and four cores, and
+# the default 1 GB slice makes maptool spill to disk repeatedly.
+maptool --protobuf -i "$REGION.osm.pbf" -S 4000000000 -T 4 "$REGION.bin"
+ls -lh "$REGION.bin"
+echo "done"

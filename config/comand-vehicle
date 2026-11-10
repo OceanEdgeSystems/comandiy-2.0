@@ -1,0 +1,2 @@
+# Optional: Vehicle page. A long-lived token of a read-only Home Assistant user.
+HA_TOKEN=

@@ -1,0 +1,10 @@
+[Unit]
+Description=Check once a day whether the maps are due
+
+[Timer]
+OnBootSec=20min
+OnUnitActiveSec=1d
+Persistent=true
+
+[Install]
+WantedBy=timers.target

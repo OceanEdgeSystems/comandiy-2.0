@@ -1,0 +1,17 @@
+[Unit]
+# Battery care for the L560 in the car: it lives on car power, so a full battery would sit at 100 % (in a warm car),
+# which wears lithium cells fastest. thinkpad_acpi charge thresholds: charge only below 75 %, stop at 80 %. One
+# power-loss hold (comand-power, 1 h) uses about 16 % (96 -> 80 % on 7-8 Nov 2026), so 80 % leaves plenty.
+# Set at every boot: the EC can forget them (battery swap, flat CMOS).
+Description=COMAND battery care: charge only to 80 %
+ConditionPathExists=/sys/class/power_supply/BAT0/charge_control_end_threshold
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=oneshot
+RemainAfterExit=yes
+# end first: the EC refuses a start threshold above the current end threshold
+ExecStart=/bin/sh -c 'echo 80 > /sys/class/power_supply/BAT0/charge_control_end_threshold; echo 75 > /sys/class/power_supply/BAT0/charge_control_start_threshold'
+
+[Install]
+WantedBy=multi-user.target

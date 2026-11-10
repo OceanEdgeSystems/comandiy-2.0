@@ -1,0 +1,12 @@
+# One still frame from power-on: the star, rendered by src/build.py from the
+# same fragment the UI page animates, so the page's splash continues from it.
+# No message, password or progress callbacks: nothing but the logo is drawn.
+Window.SetBackgroundTopColor(0.024, 0.031, 0.055);
+Window.SetBackgroundBottomColor(0.024, 0.031, 0.055);
+
+img = Image("splash.png");
+if (img.GetWidth() != Window.GetWidth() || img.GetHeight() != Window.GetHeight())
+  img = img.Scale(Window.GetWidth(), Window.GetHeight());
+logo = Sprite(img);
+logo.SetX(Window.GetX());
+logo.SetY(Window.GetY());

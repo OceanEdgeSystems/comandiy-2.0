@@ -1,0 +1,21 @@
+[Unit]
+# The car as a Bluetooth speaker: routes the phone's audio to the amplifier and
+# reports what is playing.
+#
+# After the session, because it asks the bridge whether a call is in progress
+# and stays out of the way if one is.
+Description=COMAND Bluetooth audio and metadata
+After=comand-session.service comand-bridge.service
+Wants=comand-bridge.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+Environment=XDG_RUNTIME_DIR=/run/user/@UID@
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/bt-audio.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+# COMAND AirPlay receiver settings. See /usr/local/bin/comand-mirror-run.sh.
+
+# How the phone's picture is fitted to the panel.
+#   crop  fill the screen, trimming the sides (no distortion)
+#   fit   show the whole phone screen, with black bars
+MIRROR_FIT=crop
+
+# The panel's shape, as a fraction. 5/3 is the 800x480 bench screen; the
+# COMAND panel itself is 320x230, which is 32/23.
+MIRROR_ASPECT=5/3
+
+# Rotate the received picture. Empty = as the phone sends it. Set to
+# "-r R" (clockwise) or "-r L" for a phone that stays in a portrait cradle.
+MIRROR_ROTATE=
+
+MIRROR_NAME=@CAR_NAME@
+MIRROR_DEBUG=1

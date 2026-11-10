@@ -1,0 +1,40 @@
+[Unit]
+# The car as an AirPlay screen.
+#
+# Left running rather than started on demand: a phone finds a receiver by
+# looking for one, and a receiver that only exists after somebody has chosen
+# it in a menu is one the phone cannot see when they go looking.
+Description=COMAND AirPlay receiver
+After=comand-session.service avahi-daemon.service network-online.target
+Wants=avahi-daemon.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+# The compositor, explicitly. GStreamer picks an output at runtime and picks a
+# bad one when there is no display in the environment -- mpv did exactly that
+# and decoded video into a window that was never created.
+Environment=XDG_RUNTIME_DIR=/run/user/@UID@
+Environment=WAYLAND_DISPLAY=wayland-1
+Environment=GST_GL_PLATFORM=egl
+# How the picture is fitted to the panel, and which way up it goes. Both are
+# properties of this car and this screen rather than of the software, so they
+# live in a file that can be changed without touching the unit.
+EnvironmentFile=-/etc/default/comand-mirror
+# The options themselves are in a wrapper script: two of them are GStreamer
+# pipeline fragments containing spaces, and systemd's $VAR expansion splits on
+# whitespace regardless of quoting, so a fragment set here would reach uxplay
+# as several mangled arguments.
+#
+# The wrapper also runs uxplay under stdbuf, because uxplay writes to stdout
+# with the C library's default block buffering. Into a journald pipe that
+# means nothing is logged until the process exits -- a running session looks
+# like one that never connected, and comand-mirror-watch, which reads this
+# journal to know when the phone starts mirroring, would never hear about one.
+ExecStart=/usr/local/bin/comand-mirror-run.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

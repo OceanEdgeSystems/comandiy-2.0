@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#06080e">
+<title>COMAND</title>
+<!-- The guest remote: what COMAND's Settings > App control QR code opens on a passenger's phone (car Wi-Fi).
+     Now playing + volume; Music (Music Assistant), Video (Plex), YouTube (COMAND's account), TV (an
+     IPTV server) and Radio, with search and cover art. Every call carries the code from the QR (?t=...),
+     checked by comand-bridge.py, which passes on only these. Covers come through COMAND too. -->
+<style>
+:root{--ground:#06080e;--glow:#121a2b;--ink:#f4f2ea;--dim:#aab0bd;--faint:#6a7180;--gold:#d4b455;--gold-soft:#e7cf86;--line:rgba(255,255,255,.07);--card:#111622;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;background:var(--ground);-webkit-text-size-adjust:100%}
+body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:300;color:var(--ink);min-height:100vh;
+  background:radial-gradient(120% 60% at 50% -10%,var(--glow) 0%,rgba(18,26,43,0) 70%),var(--ground);
+  -webkit-user-select:none;user-select:none;display:flex;justify-content:center;
+  padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 24px)}
+.wrap{width:100%;max-width:560px;display:flex;flex-direction:column;min-height:calc(100vh - 60px)}
+.eyebrow{color:var(--gold);font-size:10px;font-weight:400;letter-spacing:.34em;text-transform:uppercase}
+/* tabs: text only; the active one gold with a gold underline; scrolls sideways on a narrow phone */
+.tabs{display:flex;gap:18px;margin-top:14px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;padding:10px 0 9px;font-size:15px;color:var(--dim);border-bottom:1px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--gold);border-bottom-color:var(--gold)}
+button{background:none;border:0;color:var(--ink);font:inherit;padding:0;cursor:pointer;text-align:inherit}
+button:disabled{opacity:.35}
+.view{display:none}.view.on{display:block}
+.np{margin-top:24px;padding:16px 0;border-bottom:1px solid var(--line);min-height:86px;display:flex;gap:14px;align-items:center}
+.np img{width:72px;height:72px;object-fit:cover;flex:none;background:var(--card)}
+.np b{display:block;font-weight:300;font-size:21px;line-height:1.25;overflow-wrap:anywhere}
+.np span{display:block;margin-top:6px;color:var(--dim);font-size:13px}
+.note{color:var(--gold-soft);font-size:12px;margin-top:8px}
+.transport{display:flex;justify-content:space-around;align-items:center;margin:28px 0 6px}
+.tb svg{width:32px;height:32px}
+.tb.main svg{width:54px;height:54px;color:var(--gold-soft)}
+.tb:active svg{color:var(--gold)}
+.tb small{display:block;text-align:center;font-size:10px;color:var(--faint);margin-top:3px}
+.vol{margin-top:28px}
+.vol-h{display:flex;justify-content:space-between;align-items:baseline}
+.vol-h b{font-weight:200;font-size:28px;font-variant-numeric:tabular-nums}
+.vol-row{display:flex;align-items:center;gap:16px;margin-top:12px}
+.vol-row .tb svg{width:26px;height:26px}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:28px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--gold) var(--p,50%),#2a3140 var(--p,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;margin-top:-10px;background:var(--gold-soft);border:0}
+.mute{margin:20px auto 0;display:flex;gap:8px;align-items:center;font-size:14px;color:var(--dim);padding:8px 2px 6px;border-bottom:1px solid transparent}
+.mute svg{width:18px;height:18px}
+.mute.on{color:var(--gold);border-bottom-color:var(--gold)}
+/* search: a line, not a box */
+.search{display:flex;align-items:center;gap:10px;margin-top:16px;border-bottom:1px solid var(--line);padding:6px 0}
+.search svg{width:18px;height:18px;color:var(--faint);flex:none}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--ink);font:inherit;font-size:16px;padding:6px 0}
+.search input::placeholder{color:var(--faint)}
+.crumb{display:flex;align-items:center;gap:6px;margin-top:14px;color:var(--gold-soft);font-size:14px;min-height:22px}
+.crumb svg{width:16px;height:16px}
+.list{margin-top:6px}
+.row{display:flex;align-items:center;gap:12px;width:100%;padding:13px 0;border-bottom:1px solid var(--line);font-size:16px;line-height:1.3}
+.row img{width:44px;height:44px;object-fit:cover;flex:none;background:var(--card)}
+.row img.wide{width:72px;height:41px}
+.row .t{flex:1;min-width:0;overflow-wrap:anywhere}
+.row .t small{display:block;color:var(--faint);font-size:12px;margin-top:3px}
+.row svg{width:16px;height:16px;flex:none;color:var(--faint)}
+.row.now .t,.row.act .t{color:var(--gold)}
+.row:active .t{color:var(--gold-soft)}
+/* cover grids */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px;margin-top:14px}
+.grid.wide{grid-template-columns:repeat(2,1fr)}
+.card{display:flex;flex-direction:column;gap:6px;min-width:0}
+.card .pic{position:relative;width:100%;background:var(--card);overflow:hidden}
+.card .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.card.poster .pic{aspect-ratio:2/3}.card.square .pic{aspect-ratio:1}.card.wide .pic{aspect-ratio:16/9}
+.card.logo .pic{aspect-ratio:16/10}.card.logo .pic img{object-fit:contain;padding:14%}
+.card .pic i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--faint);font-style:normal;font-size:22px;font-weight:200}
+.card .cap{font-size:12px;line-height:1.3;color:var(--dim);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .cap small{display:block;color:var(--faint);font-size:11px}
+/* Favourite star: faint until it is one, then gold. Its own touch target. */
+.favstar{display:inline-flex;align-items:center;justify-content:center;flex:none;cursor:pointer;color:var(--faint)}
+.favstar svg{width:18px;height:18px;fill:rgba(0,0,0,.2);stroke:currentColor;stroke-width:1.4;paint-order:stroke}
+.favstar.on{color:var(--gold-soft)}
+.favstar.on svg{fill:var(--gold);stroke:var(--gold)}
+.card .pic .favstar{position:absolute;top:0;right:0;z-index:2;width:34px;height:34px;padding:8px;color:rgba(255,255,255,.85);filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.row .favstar{width:34px;height:34px;padding:8px}
+.card>small.epg{display:block;color:var(--faint);font-size:11px;overflow:hidden;white-space:nowrap;margin-top:-2px}
+.card>small.epg>span{display:inline-block;will-change:transform}
+.card>small.epg.scroll>span{animation:epgmarq var(--dur,7s) ease-in-out infinite alternate}
+@keyframes epgmarq{0%,14%{transform:translateX(0)}86%,100%{transform:translateX(var(--shift,0))}}
+.card:active .cap{color:var(--gold-soft)}
+.card .bar{position:absolute;left:0;bottom:0;height:2px;background:var(--gold)}
+.ghead{grid-column:1/-1;margin-top:8px}
+.msg{color:var(--faint);font-size:13px;padding:18px 0;line-height:1.5}
+.foot{margin-top:auto;padding-top:28px;text-align:center;color:var(--faint);font-size:11px;line-height:1.6}
+.err{color:#e5776b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow">COMAND</span>
+  <div class="tabs" id="tabs">
+    <button data-tab="now" class="on">Playing</button><button data-tab="music">Music</button><button data-tab="video">Video</button><button data-tab="yt">YouTube</button><button data-tab="tv">TV</button><button data-tab="radio">Radio</button>
+  </div>
+
+  <section class="view on" id="v-now">
+    <div class="np"><img id="np-art" hidden alt=""><div><b id="title">—</b><span id="sub">Connecting…</span><div class="note" id="note"></div></div></div>
+    <div class="transport" id="transport"></div>
+    <div class="vol">
+      <div class="vol-h"><span class="eyebrow">Volume</span><b id="volv">—</b></div>
+      <div class="vol-row">
+        <button class="tb" data-k="volume_down" aria-label="Volume down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/></svg></button>
+        <input type="range" id="vol" min="0" max="100" step="1" value="50" aria-label="Volume">
+        <button class="tb" data-k="volume_up" aria-label="Volume up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg></button>
+      </div>
+      <button class="mute" data-k="mute" id="mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></svg><span>Mute</span></button>
+    </div>
+  </section>
+
+  <section class="view" id="v-music"><form class="search" data-search="music"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" enterkeyhint="search" placeholder="Search artists, albums, songs"></form><div class="crumb" id="music-crumb"></div><div id="music-list"></div></section>
+  <section class="view" id="v-video"><form class="search" data-search="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" enterkeyhint="search" placeholder="Search movies and series"></form><div class="crumb" id="video-crumb"></div><div id="video-list"></div></section>
+  <section class="view" id="v-yt"><form class="search" data-search="yt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" enterkeyhint="search" placeholder="Search YouTube"></form><div class="crumb" id="yt-crumb"></div><div id="yt-list"></div></section>
+  <section class="view" id="v-tv"><div class="crumb" id="tv-crumb"></div><div id="tv-list"></div></section>
+  <section class="view" id="v-radio"><div class="list" id="radio-list"><div class="msg">Loading stations…</div></div></section>
+
+  <div class="foot">COMAND · on the car’s Wi-Fi</div>
+</div>
+<script>
+const I = {
+  play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>',
+  prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.971 4.285A2 2 0 0 1 21 6v12a2 2 0 0 1-3.029 1.715l-9.997-5.998a2 2 0 0 1-.003-3.432z"/><path d="M3 20V4"/></svg>',
+  next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4v16"/><path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z"/></svg>',
+  back30: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',
+  fwd30: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="5" y="5" rx="1.5"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// The code comes from the QR; kept so the page still works when reopened from the home screen.
+const T = (() => { const q = new URLSearchParams(location.search).get('t');
+  try { if (q) localStorage.setItem('comand.guest', q); return q || localStorage.getItem('comand.guest') || ''; } catch { return q || ''; } })();
+let st = null, dragging = false, volTimer = null, failures = 0, tab = 'now', dead = false;
+const SRC = { Carplay: 'CarPlay', Radio: 'Radio', Music: 'Music', Video: 'Video', Telephone: 'Telephone', home: '' };
+
+async function api(path, body, q) {
+  const qs = new URLSearchParams({ t: T, ...(q || {}) });
+  const r = await fetch(`/guest/${path}?${qs}`, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' });
+  if (r.status === 403) { dead = true; offline('This code is no longer valid. Scan the QR code on COMAND again (Settings › App control).'); throw new Error('403'); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || (j && j.error && !Array.isArray(j))) throw new Error((j && j.error) || `error ${r.status}`);
+  return j;
+}
+const imgUrl = p => `/guest/img?${new URLSearchParams({ t: T, ...p })}`;
+function offline(msg) { $('sub').innerHTML = `<span class="err">${esc(msg)}</span>`; document.querySelectorAll('.view button, input').forEach(b => b.disabled = true); }
+function online() { document.querySelectorAll('.view button, input').forEach(b => b.disabled = false); }
+const haptic = () => { try { navigator.vibrate && navigator.vibrate(8); } catch { /* */ } };
+
+/* ── Playing ── */
+let lastArt = null;
+function renderNow() {
+  if (!st) return;
+  const v = st.video;
+  const src = v ? (v.tv ? 'TV' : 'Video') : st.carplay && st.source === 'Carplay' ? 'CarPlay' : (SRC[st.source] ?? st.source);
+  $('title').textContent = v ? v.name : st.song || (st.playing ? 'Playing' : 'Nothing playing');
+  $('sub').textContent = v ? (v.paused ? 'Paused' : 'Playing on COMAND') : [st.radio && st.radio !== st.song ? st.radio : '', src].filter(Boolean).join(' · ') || ' ';
+  $('note').textContent = v && v.moving ? 'Picture paused while the car moves · sound carries on' : '';
+  const art = $('np-art'); if (lastArt) { art.src = lastArt; art.hidden = false; } else art.hidden = true;
+  const tb = (attr, icon, label, main) => `<button class="tb${main ? ' main' : ''}" ${attr} aria-label="${label}">${icon}${main ? '' : `<small>${label}</small>`}</button>`;
+  $('transport').innerHTML = v
+    ? tb('data-video="back30"', I.back30, '−30 s') + tb('data-video="toggle"', v.paused ? I.play : I.pause, 'Play or pause', true) + tb('data-video="forward"', I.fwd30, '+30 s') + tb('data-video="stop"', I.stop, 'Stop')
+    : tb('data-k="previous"', I.prev, 'Previous') + tb('data-k="play_pause"', st.playing ? I.pause : I.play, 'Play or pause', true) + tb('data-k="next"', I.next, 'Next');
+  if (!dragging) $('vol').value = st.vol ?? 0;
+  paintVol(); $('mute').classList.toggle('on', !!st.muted); $('mute').querySelector('span').textContent = st.muted ? 'Muted' : 'Mute';
+}
+function paintVol() { const v = +$('vol').value; $('vol').style.setProperty('--p', v + '%'); $('volv').textContent = st && st.muted ? 'Muted' : v; }
+async function poll() {
+  if (dead) return;
+  try { st = await api('state'); failures = 0; online(); if (!st.video && !st.playing) lastArt = null; renderNow(); if (tab === 'radio') markStation(); }
+  catch (e) { if (e.message !== '403' && ++failures >= 2) offline('COMAND not reachable. Is this phone on the car’s Wi-Fi?'); }
+}
+
+/* ── Radio (COMAND's own stations) ── */
+let stations = null;
+async function loadRadio() {
+  try { const r = await api('radio'); stations = r.stations; drawRadio(r.now); }
+  catch (e) { if (e.message !== '403') $('radio-list').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+}
+function drawRadio(now) {
+  const playing = st && st.radio && st.playing ? st.radio : now;
+  $('radio-list').innerHTML = (playing ? `<button class="row" data-radio-stop><span class="t">Stop radio<small>${esc(playing)}</small></span>${I.stop}</button>` : '') +
+    (stations || []).map(n => `<button class="row${n === playing ? ' now' : ''}" data-station="${esc(n)}"><span class="t">${esc(n)}</span>${favStar('radio', n, n)}</button>`).join('') ||
+    '<div class="msg">No stations on COMAND.</div>';
+}
+function markStation() { if (stations) drawRadio(st && st.radio); }
+
+/* ── Favourites: a star on a station, channel or playlist adds it to COMAND's
+   favourites (the bridge keeps the list; here we only toggle and show it). ── */
+const FAVSTAR = '<svg viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.9 6.1 21l1.1-6.5L2.5 9.9l6.5-.9z"/></svg>';
+let favSet = new Set();
+function favKey(type, payload) { const id = payload && typeof payload === 'object' ? payload.id : payload; return type + '\u0000' + String(id); }
+function favOn(type, keyOrObj) { return favSet.has(favKey(type, keyOrObj)); }
+function favStar(type, label, key, name) {
+  const on = favSet.has(favKey(type, type === 'tv' ? { id: key } : key));
+  return `<span class="favstar${on ? ' on' : ''}" data-favtoggle data-ftype="${type}" data-flabel="${esc(label)}" data-fkey="${esc(key)}"${name ? ` data-fname="${esc(name)}"` : ''}>${FAVSTAR}</span>`;
+}
+// A star only where a favourite makes sense: stations, TV channels, playlists.
+function favFor(kind, r) {
+  if (kind === 'tv') return favStar('tv', r.name, r.id, r.name);
+  if (kind === 'music' && r.type === 'playlist') return favStar('playlist', r.name, r.uri);
+  return '';
+}
+async function loadFavs() {
+  try { const r = await api('favourites'); favSet = new Set((r.favourites || []).map(f => favKey(f.type, f.payload))); }
+  catch { /* leave what we have */ }
+}
+// Light touch: flip the stars already on screen to match the list, without
+// refetching and redrawing a whole tab.
+function refreshStars() {
+  document.querySelectorAll('.favstar[data-favtoggle]').forEach(s => {
+    const type = s.dataset.ftype, key = s.dataset.fkey;
+    s.classList.toggle('on', favSet.has(favKey(type, type === 'tv' ? { id: key } : key)));
+  });
+}
+
+/* ── Browsing: Music, Video, YouTube, TV. Each tab keeps a back trail of [{title, q, rows}]. ── */
+const ROOTS = {
+  music: [{ name: 'Recently played', q: { kind: 'albums', order: 'last_played_desc' } }, { name: 'Recently added', q: { kind: 'albums', order: 'timestamp_added_desc' } },
+          { name: 'Albums', q: { kind: 'albums' } }, { name: 'Artists', q: { kind: 'artists' } }, { name: 'Playlists', q: { kind: 'playlists' } }, { name: 'Radio', q: { kind: 'radios' } }],
+  video: [{ name: 'Continue watching', q: { what: 'continue' } }, { name: 'Recently added', q: { what: 'recent' } }, { name: 'Movies', q: { what: 'movie' } }, { name: 'Series', q: { what: 'show' } }],
+  yt: [{ name: 'Subscriptions', q: { what: 'subs' } }, { name: 'Watch later', q: { what: 'later' } }, { name: 'Playlists', q: { what: 'playlists' } }],
+};
+const SCOPE = { music: 'music', video: 'video', yt: 'youtube' };
+const trail = { music: [], video: [], yt: [], tv: [] };
+async function fetchRows(kind, q) {
+  if (q.search) return api('search', null, { scope: SCOPE[kind], q: q.search });
+  if (kind === 'video') return api('video', null, q);
+  if (kind === 'yt') return api('youtube', null, q);
+  if (kind === 'music') return api('music', null, q);
+  // The line-up, and the guide for it in the same breath: now/next keyed by the
+  // same channel id, so each channel card can say what is on without a second
+  // round of taps. The guide is best-effort -- a channel with no programme data
+  // still lists, just without the strap.
+  const [lu, epg] = await Promise.all([api('tv'), api('epg').catch(() => ({}))]);
+  const progs = (epg && epg.programs) || {};
+  return (lu.groups || []).flatMap(g => [{ head: g.name }, ...g.channels.map(c => ({ ...c, type: 'channel', epg: progs[c.id] }))]);
+}
+function cover(kind, r) {
+  if (kind === 'video') return r.thumb ? imgUrl({ src: 'plex', path: r.thumb }) : '';
+  if (kind === 'yt') { const id = r.vid || ((r.thumb || '').match(/\/vi\/([\w-]{11})\//) || [])[1]; return id ? imgUrl({ src: 'yt', id }) : ''; }
+  if (kind === 'music') { const m = (r.art || '').match(/[?&]id=([^&]+)/); return m ? imgUrl({ src: 'ma', id: decodeURIComponent(m[1]) }) : ''; }
+  if (kind === 'tv') return imgUrl({ src: 'tv', id: r.id });
+  return '';
+}
+const deeper = (kind, r) => kind === 'video' ? (r.type === 'show' || r.type === 'season') : kind === 'yt' ? r.type === 'ytlist'
+  : kind === 'music' ? ['artist', 'album', 'playlist'].includes(r.type) : false;
+// Posters and covers as a grid; seasons, episodes and tracks as a list.
+function asGrid(kind, rows) {
+  if (kind === 'tv' || kind === 'yt') return true;
+  const items = rows.filter(r => !r.head);
+  return items.length > 0 && items.every(r => kind === 'video' ? ['movie', 'show'].includes(r.type) : r.type !== 'track');
+}
+const shape = (kind) => ({ video: 'poster', music: 'square', yt: 'wide', tv: 'logo' }[kind]);
+function sub(kind, r) {
+  if (kind === 'music') return r.by || '';
+  if (kind === 'video' && (r.type === 'episode' || r.type === 'movie') && r.offset > 60000 && r.duration) return `${Math.round(r.offset / r.duration * 100)} % watched`;
+  if (kind === 'tv' && r.epg && r.epg.current && r.epg.current.title) {
+    const c = r.epg.current, n = r.epg.next;
+    return 'Now · ' + c.title + (n && n.title ? '  ·  Next · ' + n.title : '');
+  }
+  return '';
+}
+// A now/next line too long for its tile scrolls gently end to end; one that fits
+// stays put. Measured after layout, so only the overflowing ones animate.
+function marqueeEpg(list) {
+  const run = () => list.querySelectorAll('small.epg').forEach(el => {
+    const span = el.firstElementChild; if (!span) return;
+    const over = span.scrollWidth - el.clientWidth;      // measured once the grid has sized the tiles
+    el.classList.toggle('scroll', over > 6);
+    if (over > 6) {
+      el.style.setProperty('--shift', `-${over + 10}px`);
+      el.style.setProperty('--dur', `${Math.max(5, (over + 10) / 24).toFixed(1)}s`);
+    }
+  });
+  // Two frames so the column widths are settled, and again once the web font
+  // has loaded (it changes the text width, and so whether a line overflows).
+  requestAnimationFrame(() => requestAnimationFrame(run));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
+}
+function drawRoot(kind) {
+  const list = $(kind + '-list');
+  if (kind === 'tv') return openList('tv', null, {});
+  list.innerHTML = `<div class="list">${ROOTS[kind].map((r, i) => `<button class="row" data-root="${kind}:${i}"><span class="t">${esc(r.name)}</span>${I.chev}</button>`).join('')}</div>`;
+}
+async function openList(kind, title, q) { trail[kind].push({ title, q }); await drawList(kind); }
+async function drawList(kind) {
+  const list = $(kind + '-list'), crumb = $(kind + '-crumb'), t = trail[kind], top = t[t.length - 1];
+  const showBack = top && (kind !== 'tv' || t.length > 1);
+  crumb.innerHTML = showBack ? `<button data-up="${kind}" style="display:flex;align-items:center;gap:6px;color:var(--gold-soft)">${I.back}${esc(top.title || '')}</button>` : '';
+  if (!top) return drawRoot(kind);
+  if (!top.rows) {
+    list.innerHTML = `<div class="msg">Loading…${kind === 'yt' ? ' YouTube can take a few seconds.' : ''}</div>`;
+    try { top.rows = await fetchRows(kind, top.q); }
+    catch (e) {
+      if (e.message === '403') return;
+      list.innerHTML = `<div class="msg err">${esc(kind === 'tv' ? 'Live TV is not reachable right now.' : /sign in/i.test(e.message) ? 'YouTube on COMAND is not signed in.' : e.message)}</div>`;
+      return;
+    }
+    if (trail[kind][trail[kind].length - 1] !== top) return;        // moved on meanwhile
+  }
+  const rows = top.rows;
+  if (!rows.filter(r => !r.head).length) { list.innerHTML = `<div class="msg">${kind === 'tv' ? 'No channels in the line-up right now.' : top.q.search ? 'Nothing found.' : 'Nothing here.'}</div>`; return; }
+  // Albums and playlists: play the lot, as well as track by track.
+  const all = kind === 'music' && top.q.kids && top.q.kids !== 'artist' && top.uri ? `<button class="row act" data-music="${esc(top.uri)}"><span class="t">Play ${top.q.kids}</span>${I.play.replace('<svg', '<svg style="width:16px;height:16px"')}</button>` : '';
+  if (asGrid(kind, rows)) {
+    list.innerHTML = all + `<div class="grid${kind === 'yt' ? ' wide' : ''}">${rows.map((r, i) => r.head
+      ? `<div class="ghead eyebrow">${esc(r.head)}</div>`
+      : `<button class="card ${shape(kind)}" data-item="${kind}:${i}"><span class="pic">${cover(kind, r) ? `<img loading="lazy" alt="" src="${cover(kind, r)}" onerror="this.remove()">` : ''}<i>${esc((r.name || '?').trim()[0] || '')}</i>${
+          r.offset && r.duration ? `<span class="bar" style="width:${Math.min(100, r.offset / r.duration * 100)}%"></span>` : ''}${favFor(kind, r)}</span><span class="cap">${esc(r.name)}${
+            kind !== 'tv' && sub(kind, r) ? `<small>${esc(sub(kind, r))}</small>` : ''}</span>${
+            kind === 'tv' && sub(kind, r) ? `<small class="epg"><span>${esc(sub(kind, r))}</span></small>` : ''}</button>`).join('')}</div>`;
+    // the initial letter shows only where there is no picture
+    list.querySelectorAll('.pic img').forEach(im => im.addEventListener('load', () => { const l = im.nextElementSibling; if (l) l.textContent = ''; }));
+    // Now/next on a logo tile is wider than the tile; let a line that overflows
+    // marquee so the whole programme name can be read, and leave short ones still.
+    if (kind === 'tv') marqueeEpg(list);
+  } else {
+    list.innerHTML = all + `<div class="list">${rows.map((r, i) => r.head
+      ? `<div class="ghead eyebrow">${esc(r.head)}</div>`
+      : `<button class="row" data-item="${kind}:${i}">${
+      cover(kind, r) && kind !== 'music' ? `<img loading="lazy" alt="" class="${kind === 'yt' ? 'wide' : ''}" src="${cover(kind, r)}" onerror="this.remove()">` : ''}<span class="t">${esc(r.name)}${sub(kind, r) ? `<small>${esc(sub(kind, r))}</small>` : ''}</span>${favFor(kind, r)}${deeper(kind, r) ? I.chev : ''}</button>`).join('')}</div>`;
+  }
+}
+async function pick(kind, r) {
+  if (deeper(kind, r)) {
+    haptic();
+    if (kind === 'video') return openList(kind, r.name, { key: r.key });
+    if (kind === 'yt') return openList(kind, r.name.replace(/ — .*$/, ''), { url: r.url });
+    trail.music.push({ title: r.name, q: { kids: r.type, id: r.id, provider: r.provider || 'library' }, uri: r.uri });
+    return drawList('music');
+  }
+  haptic();
+  const art = cover(kind, r);
+  let body;
+  if (kind === 'video') body = { play: { key: r.key, offset: r.offset, duration: r.duration, name: r.name } };
+  else if (kind === 'yt') body = { play: { url: r.url, name: r.name } };
+  else if (kind === 'music') body = { music: r.uri };
+  else body = { tv: { id: r.id, name: r.name } };
+  try { await api('cmd', body); } catch { return; }
+  lastArt = art || null;
+  setTab('now'); $('title').textContent = r.name; $('sub').textContent = 'Starting on COMAND…'; renderNow();
+  $('title').textContent = r.name;
+  setTimeout(poll, 1500); setTimeout(poll, 4000);
+}
+
+/* ── Tabs, taps, search ── */
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + t));
+  if (t === 'radio') { if (!stations) loadRadio(); else markStation(); }
+  if (['music', 'video', 'yt', 'tv'].includes(t) && !$(t + '-list').innerHTML) drawList(t);
+  loadFavs().then(refreshStars);
+}
+document.addEventListener('submit', e => {
+  const f = e.target.closest('form[data-search]'); if (!f) return;
+  e.preventDefault();
+  const kind = f.dataset.search, q = f.querySelector('input').value.trim();
+  f.querySelector('input').blur();
+  if (q) { trail[kind] = []; openList(kind, `“${q}”`, { search: q }); }
+});
+document.addEventListener('click', async e => {
+  // A star sits inside a station row or a channel/playlist card; handle it
+  // before the row's own tap so starring never also plays.
+  const star = e.target.closest('[data-favtoggle]');
+  if (star) {
+    haptic();
+    const type = star.dataset.ftype, key = star.dataset.fkey, name = star.dataset.fname;
+    const payload = type === 'tv' ? { id: key, name: name || star.dataset.flabel } : key;
+    const k = favKey(type, payload);
+    const adding = !favSet.has(k);
+    if (adding) favSet.add(k); else favSet.delete(k);
+    star.classList.toggle('on', adding);
+    try { await api('cmd', { favourite: { action: adding ? 'add' : 'remove', type, label: star.dataset.flabel, payload } }); }
+    catch { if (adding) favSet.delete(k); else favSet.add(k); star.classList.toggle('on', !adding); }
+    return;
+  }
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.tab) { haptic(); return setTab(b.dataset.tab); }
+  if (b.dataset.k) { haptic(); try { st = await api('cmd', { k: b.dataset.k }); renderNow(); } catch { /* */ }
+    if (['play_pause', 'next', 'previous'].includes(b.dataset.k)) setTimeout(poll, 700); return; }
+  if (b.dataset.video) { haptic(); try { st = await api('cmd', { video: b.dataset.video }); renderNow(); } catch { /* */ } setTimeout(poll, 600); return; }
+  if (b.dataset.station) { haptic(); try { await api('cmd', { radio: b.dataset.station }); } catch { return; } lastArt = null; st = { ...(st || {}), radio: b.dataset.station, playing: true }; markStation(); setTimeout(poll, 1500); return; }
+  if ('radioStop' in b.dataset) { haptic(); try { await api('cmd', { radio: null }); } catch { return; } st = { ...(st || {}), playing: false }; drawRadio(''); setTimeout(poll, 1000); return; }
+  if (b.dataset.music) { haptic(); try { await api('cmd', { music: b.dataset.music }); } catch { return; } setTab('now'); setTimeout(poll, 1500); return; }
+  if (b.dataset.up) { haptic(); const k = b.dataset.up; trail[k].pop(); if (k === 'tv' && !trail.tv.length) return openList('tv', null, {}); return drawList(k); }
+  if (b.dataset.root) { haptic(); const [kind, i] = b.dataset.root.split(':'); const r = ROOTS[kind][+i]; return openList(kind, r.name, r.q); }
+  if (b.dataset.item) { const [kind, i] = b.dataset.item.split(':'); const t = trail[kind]; return pick(kind, t[t.length - 1].rows[+i]); }
+});
+const vol = $('vol');
+vol.addEventListener('pointerdown', () => { dragging = true; });
+['pointerup', 'pointercancel', 'change'].forEach(t => vol.addEventListener(t, () => { dragging = false; }));
+vol.addEventListener('input', () => { paintVol(); clearTimeout(volTimer);
+  volTimer = setTimeout(() => api('cmd', { vol: +vol.value }).then(s => { st = s; if (!dragging) renderNow(); }).catch(() => {}), 120); });
+if (!T) offline('Open this page by scanning the QR code on COMAND (Settings › App control).');
+else { const h = location.hash.slice(1); if (['music', 'video', 'yt', 'tv', 'radio'].includes(h)) setTab(h);   // #video etc. opens on that tab
+  loadFavs().then(refreshStars);
+  poll(); setInterval(() => { if (document.visibilityState === 'visible') poll(); }, 2000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') poll(); }); }
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+[Unit]
+# The Ooono app's warnings on COMAND. See car/ooono-ble.py.
+Description=COMAND as an Ooono co-driver
+After=bluetooth.service comand-bridge.service
+Wants=bluetooth.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+# Advertising under its own address takes raw HCI commands.
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/ooono-ble.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

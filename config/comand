@@ -1,0 +1,13 @@
+# COMAND head unit settings. Re-run ./install.sh after changing them.
+CAR_NAME="COMAND"
+# Optional: your car Home Assistant / Music Assistant, addresses separated by spaces.
+HA_HOSTS=""
+HA_URLS=""
+# Optional: your Mosquitto login for the Home Assistant link (password in ~/.config/comand/mqtt-pass).
+HA_MQTT_USER=""
+# Prefix of the Home Assistant entities the Vehicle page reads, e.g. sensor.car_engine_rpm.
+HA_ENTITY_PREFIX="car_"
+# Optional: an IPTV server for Menu > Video > Live TV.
+IPTV_URL=""
+# Optional: download speed-limit map updates by itself (large downloads). 1 = yes.
+MAP_AUTO_UPDATE=""

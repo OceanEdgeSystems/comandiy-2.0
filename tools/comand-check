@@ -1,0 +1,29 @@
+#!/bin/bash
+# What the head unit can see: run it after wiring, and whenever something is missing.
+ok()   { printf '  [ ok ]  %s\n' "$1"; }
+miss() { printf '  [ -- ]  %s\n' "$1"; }
+usb() { if lsusb -d "$1" >/dev/null 2>&1; then ok "$2"; else miss "$2 (USB $1 not found)"; fi; }
+
+echo "USB devices"
+usb 1314:      "CarPlay dongle (Carlinkit)"
+usb 0483:52a4  "CANable with rbcan firmware"
+usb 1546:01a7  "GPS (u-blox 7)"
+usb 303a:      "Control knob (ESP32-S3), optional"
+usb 0c72:000c  "PCAN-USB for CAN-B, optional"
+if pactl list short sources 2>/dev/null | grep -q 'alsa_input.usb'; then ok "USB microphone"; else miss "USB microphone"; fi
+
+echo "Video"
+for c in /sys/class/drm/card*-DP-2; do
+  [ -e "$c" ] || continue
+  if [ "$(cat "$c/status")" = connected ]; then ok "VGA output (DP-2) active: $(cat "$c/enabled")"; else miss "VGA output (DP-2) reports $(cat "$c/status")"; fi
+done
+
+echo "Services"
+for s in comand-session comand-bridge comand-keys comand-carplay comand-bt-agent comand-bt-audio comand-gps comand-video-link; do
+  if systemctl is-active -q "$s"; then ok "$s"; else miss "$s ($(systemctl is-active "$s"))"; fi
+done
+failed="$(systemctl --failed --no-legend --plain | awk '{print $1}' | tr '\n' ' ')"
+[ -z "$failed" ] && ok "no failed services" || miss "failed: $failed"
+
+echo "Network"
+ip -o -4 addr show scope global | awk '{printf "  address %s on %s\n", $4, $2}'

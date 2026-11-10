@@ -1,0 +1,37 @@
+[Unit]
+# The head unit session: sway, and everything it starts.
+#
+# Replaces comand-ui.service, which ran cage with a single client. cage hosts
+# exactly one thing, and this screen now shows three at once -- Android,
+# CarPlay, and our overlay above both.
+#
+# sway's config starts the rest: Waydroid on workspace 1, CarPlay on 2, and the
+# layer-shell overlay which belongs to the output rather than either workspace.
+Description=COMAND head unit session (sway)
+After=systemd-user-sessions.service comand-bridge.service
+Wants=comand-bridge.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+PAMName=login
+TTYPath=/dev/tty1
+Environment=XDG_RUNTIME_DIR=/run/user/@UID@
+
+# Same capability drop the cage unit needed: bubblewrap, used by the WebKit
+# process inside the overlay, refuses to run when it sees capabilities it did
+# not expect, and systemd's default bounding set is all of them. Without this
+# the session fails on a cold boot only -- a restart from a shell always works,
+# which is exactly why it was missed the first time.
+CapabilityBoundingSet=
+AmbientCapabilities=
+Environment=WEBKIT_DISABLE_DMABUF_RENDERER=1
+
+ExecStart=/usr/bin/sway -c /usr/local/share/comand-ui/sway-headunit.conf
+
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

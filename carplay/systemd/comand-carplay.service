@@ -1,0 +1,35 @@
+[Unit]
+# The CarPlay session: holds the dongle open and decodes its video.
+#
+# A separate unit, not a sway exec. A process sway execs escapes this unit's
+# cgroup, so restarting the session left the old client running: two clients
+# then claimed the same dongle, reset it between them, and produced a black
+# screen with every process apparently healthy. systemd stopping what it
+# started is the whole point.
+#
+# It runs whether or not CarPlay is the source on screen, because the dongle
+# resets itself the moment the host lets go -- a nine-second connect/disconnect
+# cycle in dmesg that reads like failing hardware. Holding the session is what
+# makes switching to CarPlay instant rather than a reconnection.
+Description=COMAND CarPlay session
+After=comand-session.service
+BindsTo=comand-session.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+SupplementaryGroups=plugdev input
+Environment=XDG_RUNTIME_DIR=/run/user/@UID@
+# WAYLAND_DISPLAY and SWAYSOCK are deliberately not set: sway's socket names
+# carry its pid and change on every restart, so the client finds them.
+# --dashboard asks the dongle for turn-by-turn. It sends one extra message,
+# BoxSettings, carrying only navigation fields -- see box_settings() for what
+# is deliberately left out of it and what happened when it was not.
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/carplay.py --dashboard
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target comand-session.service

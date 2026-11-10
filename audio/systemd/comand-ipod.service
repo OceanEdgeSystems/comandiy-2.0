@@ -1,0 +1,23 @@
+[Unit]
+# Makes a connected iPod Classic playable: mounts it, exposes its music to MPD
+# and tells the bridge.
+#
+# Root, because it mounts. Everything else in the audio path runs as the
+# session user; this is the one piece that cannot.
+Description=COMAND iPod watcher
+After=comand-bridge.service
+Wants=comand-bridge.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/ipod-watch.py
+# Leave the iPod unmounted on the way out rather than holding a filesystem on a
+# device someone is about to unplug.
+ExecStopPost=-/usr/bin/python3 /usr/local/share/comand-ui/ipod-watch.py --eject
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,61 @@
+# COMAND head unit on a ThinkPad L560: Debian 13 trixie amd64, no desktop, SSH on.
+# Unattended except for choosing the disk to erase and confirming it.
+# make-stick.sh fills in the name, the password hash and the time zone.
+
+d-i debian-installer/locale string en_US.UTF-8
+d-i keyboard-configuration/xkb-keymap select us
+d-i time/zone string @TIMEZONE@
+d-i clock-setup/utc boolean true
+d-i clock-setup/ntp boolean true
+
+d-i netcfg/choose_interface select auto
+# The L560 needs more than the default 3 s to get a link; without this the
+# installer falls back to Wi-Fi and asks for a passphrase.
+d-i netcfg/link_wait_timeout string 10
+d-i netcfg/get_hostname string comand
+d-i netcfg/get_domain string
+d-i netcfg/hostname string comand
+d-i netcfg/wireless_wep string
+d-i hw-detect/load_firmware boolean true
+
+d-i mirror/country string manual
+d-i mirror/http/hostname string deb.debian.org
+d-i mirror/http/directory string /debian
+d-i mirror/http/proxy string
+d-i apt-setup/non-free-firmware boolean true
+d-i apt-setup/contrib boolean true
+
+d-i passwd/root-login boolean false
+d-i passwd/user-fullname string @USERNAME@
+d-i passwd/username string @USERNAME@
+d-i passwd/user-password-crypted password @PASSWORD_HASH@
+
+d-i partman-auto/method string regular
+d-i partman-auto/choose_recipe select atomic
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-md/device_remove_md boolean true
+d-i partman-efi/non_efi_system boolean true
+d-i partman-partitioning/choose_label select gpt
+d-i partman-partitioning/default_label string gpt
+
+tasksel tasksel/first multiselect standard, ssh-server
+d-i pkgsel/include string sudo curl git python3 can-utils usbutils pciutils i2c-tools intel-media-va-driver vainfo intel-microcode firmware-linux firmware-iwlwifi firmware-misc-nonfree
+d-i pkgsel/upgrade select full-upgrade
+popularity-contest popularity-contest/participate boolean false
+
+d-i grub-installer/only_debian boolean true
+d-i grub-installer/with_other_os boolean false
+d-i grub-installer/bootdev string default
+
+# Leaves the release in your home folder, ready for ./install.sh.
+d-i preseed/late_command string \
+  mkdir -p /target/home/@USERNAME@/comand-release; \
+  cp -R /hd-media/comand-release/. /target/home/@USERNAME@/comand-release/; \
+  if [ -f /hd-media/authorized_keys ]; then \
+    mkdir -p /target/home/@USERNAME@/.ssh; \
+    cp /hd-media/authorized_keys /target/home/@USERNAME@/.ssh/authorized_keys; \
+    chmod 700 /target/home/@USERNAME@/.ssh; chmod 600 /target/home/@USERNAME@/.ssh/authorized_keys; \
+  fi; \
+  in-target chown -R @USERNAME@:@USERNAME@ /home/@USERNAME@; \
+  chmod +x /target/home/@USERNAME@/comand-release/install.sh
+d-i finish-install/reboot_in_progress note

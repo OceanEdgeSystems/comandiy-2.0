@@ -1,0 +1,17 @@
+[Unit]
+# L560 box: the VGA bridge on DP-2 that feeds COMAND's RGB input has no sink to
+# detect (COMAND has no DDC), so i915 reports it disconnected and sway has no
+# output: blank COMAND screen and no overlay after a reboot. Force the
+# connector on before the session starts. See docs/vga-to-comand.md.
+Description=COMAND video: force DP-2 on
+Before=comand-session.service
+ConditionPathExists=/sys/class/drm/card0-DP-2/status
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'echo on > /sys/class/drm/card0-DP-2/status'
+
+[Install]
+WantedBy=multi-user.target

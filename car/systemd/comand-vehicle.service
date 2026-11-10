@@ -1,0 +1,18 @@
+[Unit]
+# The car's own state for the Vehicle page, from the car's Home Assistant. See car/vehicle.py.
+Description=COMAND vehicle state from the car's Home Assistant
+After=network-online.target comand-bridge.service
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+# HA_TOKEN (a read-only Home Assistant user's) and optionally HA_URLS.
+EnvironmentFile=/etc/default/comand-vehicle
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/vehicle.py
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

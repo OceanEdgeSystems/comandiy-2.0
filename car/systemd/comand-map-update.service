@@ -1,0 +1,14 @@
+[Unit]
+# The speed limit table. See car/map-update.py.
+Description=COMAND map update
+After=network-online.target comand-bridge.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=oneshot
+User=@USER@
+EnvironmentFile=-/etc/default/comand-vehicle
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=120%
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/map-update.py

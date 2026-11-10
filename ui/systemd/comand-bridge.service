@@ -1,0 +1,24 @@
+[Unit]
+# Joins the knob and the screen into one device: owns the knob's serial port,
+# serves the UI, and keeps both ends showing the same state. Also brings the
+# right app forward when a menu entry is chosen.
+Description=COMAND knob/UI bridge
+After=network.target
+Before=comand-session.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+# dialout for the knob's CDC port, matched by USB vendor id rather than name:
+# /dev/ttyACM0 is the u-blox GPS when it is plugged in.
+SupplementaryGroups=dialout
+# Required for `waydroid app launch`, which otherwise fails silently -- the
+# launches did nothing, which looked like Sygic refusing to come forward.
+Environment=XDG_RUNTIME_DIR=/run/user/@UID@
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/comand-bridge.py --port 8080
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

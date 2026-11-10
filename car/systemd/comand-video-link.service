@@ -1,0 +1,18 @@
+[Unit]
+# Plex on COMAND. See car/video-link.py.
+Description=COMAND video
+After=network-online.target comand-bridge.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+Environment=XDG_RUNTIME_DIR=/run/user/@UID@
+Environment=WAYLAND_DISPLAY=wayland-1
+EnvironmentFile=-/etc/default/comand-plex
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/video-link.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

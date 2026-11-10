@@ -1,0 +1,16 @@
+[Unit]
+# COMAND as a Music Assistant player. See car/squeezelite-comand.sh.
+Description=COMAND Music Assistant player
+After=network-online.target comand-bridge.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+Environment=XDG_RUNTIME_DIR=/run/user/@UID@
+ExecStart=/bin/bash /usr/local/share/comand-ui/squeezelite-comand.sh
+Restart=always
+RestartSec=20
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,73 @@
+{
+  "_comment": [
+    "Internet radio stations for the head unit, shown as a grid of tiles, six",
+    "to a page.",
+    "",
+    "`name` is what appears under the focused tile, so keep it short: the panel",
+    "is 320x230 and a long name is truncated with an ellipsis.",
+    "",
+    "Artwork, best source first: a file bundled in audio/logos/<slug>.<ext>,",
+    "which needs no network and cannot change under the car; then `logo_url`;",
+    "then the best icon `site` advertises. Guessed artwork lands on a",
+    "station's favicon as often as its mark, so give one of the first two",
+    "wherever a good logo is known. Fetched and cached by",
+    "audio/fetch-logos.py.",
+    "",
+    "`tile` is the two or three characters drawn when there is no artwork at",
+    "all, and `color` is the square behind the logo, which shows around a mark",
+    "that is not itself square.",
+    "",
+    "Prefer plain MP3 or AAC stream URLs over .pls or .m3u wrappers where the",
+    "station offers both: MPD follows a wrapper, but that is one more fetch",
+    "before any sound, and pulling away from a signal is when it fails.",
+    "",
+    "Edit on the Pi at /var/lib/comand/stations.json; the bridge re-reads it",
+    "when it changes, so no restart is needed."
+  ],
+  "stations": [
+    {
+      "name": "DR P5 Syd",
+      "tile": "P5",
+      "color": "#000000",
+      "url": "http://live-icy.gss.dr.dk/A/A25H.mp3",
+      "site": "https://www.dr.dk/lyd/p5",
+      "logo_url": "https://upload.wikimedia.org/wikipedia/en/thumb/6/63/DR_P5_logo_2020.svg/3840px-DR_P5_logo_2020.svg.png"
+    },
+    {
+      "name": "Radio Monte Carlo",
+      "tile": "RMC",
+      "color": "#ffffff",
+      "url": "https://icy.unitedradio.it/RMC.mp3",
+      "site": "https://www.radiomontecarlo.net/"
+    },
+    {
+      "name": "Radio VLR Vejle-Kolding",
+      "tile": "VLR",
+      "color": "#1b2a4a",
+      "url": "https://netradio.vlr.dk/vlr8d",
+      "site": "https://www.vlr.dk/",
+      "logo_url": "https://static-media.streema.com/media/cache/94/55/9455a49ca949ba8fb52f0bf853bbace5.jpg"
+    },
+    {
+      "name": "Cafe del Mar",
+      "tile": "CDM",
+      "color": "#2a3158",
+      "url": "https://streams.radio.co/se1a320b47/listen",
+      "site": "https://www.cafedelmar.com/"
+    },
+    {
+      "name": "Los 40",
+      "tile": "40",
+      "color": "#ffffff",
+      "url": "https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40.mp3",
+      "site": "https://los40.com/"
+    },
+    {
+      "name": "Cadena 100",
+      "tile": "100",
+      "color": "#f51f85",
+      "url": "https://cadena100-cope.flumotion.com/playlist.m3u8",
+      "site": "https://www.cadena100.es/"
+    }
+  ]
+}

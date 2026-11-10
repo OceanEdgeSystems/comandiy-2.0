@@ -1,0 +1,26 @@
+[Unit]
+# The car's fix into Android.
+#
+# Waydroid has no location HAL: Android in the container sees no receiver at
+# all, so Sygic gets nothing. This injects the fix through Android's own
+# test-provider interface, which lands it on the fused provider as well -- and
+# fused is what Play Services apps actually read.
+#
+# After the session, because the injection goes through `waydroid shell` and
+# there is no container to talk to until Waydroid is up. It retries rather than
+# failing if it is early.
+Description=COMAND GPS into Android
+After=comand-session.service gpsd.service
+Wants=gpsd.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+# Root: `waydroid shell` needs it, and so does the app-op grant that makes
+# mock locations allowed at all.
+ExecStart=/usr/bin/python3 -u /usr/local/share/comand-ui/gps-bridge.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

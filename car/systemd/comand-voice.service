@@ -1,0 +1,16 @@
+[Unit]
+# Voice commands, offline. See car/voice.py.
+Description=COMAND voice commands
+After=comand-bridge.service pipewire.service
+
+[Service]
+EnvironmentFile=-/etc/default/comand
+Type=simple
+User=@USER@
+Environment=XDG_RUNTIME_DIR=/run/user/@UID@
+ExecStart=/opt/comand-voice/venv/bin/python -u /usr/local/share/comand-ui/voice.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

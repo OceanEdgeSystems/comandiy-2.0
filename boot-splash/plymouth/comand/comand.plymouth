@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=COMAND
+Description=COMAND head unit boot screen
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/comand
+ScriptFile=/usr/share/plymouth/themes/comand/comand.script
